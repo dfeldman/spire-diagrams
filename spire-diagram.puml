@@ -1,0 +1,91 @@
+@startuml
+hide footbox
+skinparam shadowing false
+skinparam monochrome true
+title SPIRE Sequence Diagram
+actor "Administrator" as admin
+database "Trust Bundle\nStorage" as bs
+participant "Upstream\nAuthority" as ua
+participant "SPIRE Server" as ss
+participant "SPIRE Agent" as sa1
+participant "Workload" as wk
+participant "Cloud Provider\nor Kubernetes" as cp
+
+==Create or Update Server Certificate and Private Key==
+group Repeats
+    ss -> ua: CSR
+    ua -> ss: Signing Certificate
+    ss->bs: Signing Certificate
+end
+rnote right: The upstream authority can be another SPIRE Server,\na CA, or a CA certificate file on disk
+
+==Node Attestation with Join Token==
+admin -> ss: Admin creates a join token
+admin -> sa1: Admin manually starts SPIRE Agent with that join token
+sa1 -> bs: Fetch bootstrap trust bundle (used for agent to check SPIRE server identity)
+bs->sa1
+sa1-> ss: Connect and attest with join token
+group Repeats
+sa1 -> ss: CSR for node SVID
+rnote right of ss: SPIRE Server signs the agent's SVID
+ss -> sa1: Signed agent SVID with join token in the SPIFFE ID
+ss -> sa1: Trust bundle
+end
+
+==Node Attestation through Pre-Shared Certificates==
+sa1 -> bs: Fetch bootstrap trust bundle (used for agent to check SPIRE server identity)
+bs->sa1
+ss -> sa1: Server and agent perform zero-knowledge proof protocol\nof the agent's certificate and private key
+ss <- sa1
+group Repeats 
+sa1 -> ss: CSR for agent SVID
+rnote right of ss: Server signs the agent's SVID
+
+ss -> sa1: Signed agent SVID with certificate fingerprint in the SPIFFE ID
+ss -> sa1: Trust bundle
+end
+
+==Node Attestation with Cloud or Kubernetes Node Attestors\nCurrent support: AWS, GCP, Azure, Kubernetes== 
+sa1 -> bs: Fetch bootstrap trust bundle (used for agent to check SPIRE server identity)
+bs->sa1
+sa1->ss: Connect
+ss -> sa1: Request node identity from SPIRE agent
+sa1 -> cp: Request node identity from cloud provider
+cp -> sa1: Signed node identity
+sa1 -> ss: Signed node identity
+ss -> cp: Fetch certificate of cloud provider
+cp -> ss
+rnote right of ss: Server verifies the signature on the node identity using the\ncloud provider's certificate
+ss --> cp: Additional security checks (AWS only)
+cp-->ss
+ss --> cp: Optional node resolution to fetch extra attributes of the node
+cp-->ss
+rnote right of ss: The extra node attributes, like image name, are useful for\nassigning custom SPIFFE IDs to nodes
+group Repeats 
+sa1 -> ss: CSR for agent SVID
+rnote right of ss: Server signs the agent's SVID
+ss -> sa1: Signed node SVID with cloud identity in the SPIFFE ID
+ss -> sa1: Trust bundle
+end
+
+
+==Workload Attestation==
+admin->ss: Administrator creates a registration entry containing\nselectors and a workload SPIFFE ID
+activate wk
+group Repeats
+sa1->ss: Agent connects securely to server using its SVID\n(which it obtained through node attestation)
+ss->sa1: Server sends registration entries for this agent
+sa1->ss: Agent sends CSRs
+rnote right of ss: Server signs SVIDs for the agent's workloads
+ss->sa1: Server sends Workload SVIDs
+end
+group SPIFFE Workload API
+wk->sa1: Workload opens connection over\nlocal Unix Data Socket
+rnote right of sa1: Agent gets selectors for the workload from the OS\nor kubelet securely, and chooses the right SVIDs to send\nbased on the agent's registration entries
+sa1->wk: Workload SVIDs
+sa1->wk: Trust bundle
+end
+
+
+
+@enduml
