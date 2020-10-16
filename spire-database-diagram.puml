@@ -44,7 +44,6 @@ Value : string
 
 entity "DNSName" as dnsname {
 --
-RegisteredEntryId : uint
 Value : string 
 }
 
