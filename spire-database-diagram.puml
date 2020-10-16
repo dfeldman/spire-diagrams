@@ -58,10 +58,10 @@ NewExpiresAt : time
 }
 
 entity "NodeSelector" as nodeselector {
+--
 SpiffeID : string
-DataType : string
-SerialNumber : string
-ExpiresAt : time
+Type : string
+Value : string
 }
 
 bundle ...|{ fre
