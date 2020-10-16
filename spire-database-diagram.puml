@@ -1,0 +1,72 @@
+@startuml
+skinparam shadowing false
+skinparam monochrome true
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "Bundle" as bundle {
+  TrustDomain : string
+--
+  Data : bytes
+}
+
+entity "Federated Registration Entry" as fre {
+}
+
+entity "Registered Entry" as re {
+  EntryID : string
+--
+  SpiffeID : string
+  ParentId : string
+  TTL : int32
+  Admin : bool
+  Downstream : bool
+  Expiry : int64
+  RevisionNumber : int64
+}
+
+entity "Join Token" as jt {
+  Token : string
+--
+  Expiry : int64
+}
+
+
+entity "Selector" as selector {
+--
+Type : string
+Value : string
+}
+
+entity "DNSName" as dnsname {
+--
+RegisteredEntryId : uint
+Value : string 
+}
+
+entity "AttestedNode" as attestednode {
+SpiffeID : string
+DataType : string
+SerialNumber : string
+ExpiresAt : time
+NewSerialNumber : string
+NewExpiresAt : time
+}
+
+entity "NodeSelector" as nodeselector {
+SpiffeID : string
+DataType : string
+SerialNumber : string
+ExpiresAt : time
+}
+
+bundle ...|{ fre
+re ...|{ fre
+re ...|{ selector
+re ...|{ dnsname
+attestednode...|{ nodeselector
+@enduml
