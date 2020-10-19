@@ -8,20 +8,22 @@ hide circle
 ' avoid problems with angled crows feet
 skinparam linetype ortho
 
-entity "Bundle" as bundle {
+object "Bundle" as bundle {
   TrustDomain : string
 --
   Data : bytes
 }
 
-entity "Federated Registration Entry" as fre {
+object "FederatedRegistrationEntry" as fre {
+  TrustDomain: string
+  EntryID: string
 }
 
-entity "Registered Entry" as re {
+object "RegisteredEntry" as re {
   EntryID : string
 --
   SpiffeID : string
-  ParentId : string
+  ParentID : string
   TTL : int32
   Admin : bool
   Downstream : bool
@@ -29,26 +31,29 @@ entity "Registered Entry" as re {
   RevisionNumber : int64
 }
 
-entity "Join Token" as jt {
+object "JoinToken" as jt {
   Token : string
 --
   Expiry : int64
 }
 
 
-entity "Selector" as selector {
+object "Selector" as selector {
+RegisteredEntryId : string
 --
 Type : string
 Value : string
 }
 
-entity "DNSName" as dnsname {
+object "DNSName" as dnsname {
+RegisteredEntryId : string
 --
-Value : string 
+Value : string
 }
 
-entity "AttestedNode" as attestednode {
+object "AttestedNode" as attestednode {
 SpiffeID : string
+--
 DataType : string
 SerialNumber : string
 ExpiresAt : time
@@ -56,16 +61,16 @@ NewSerialNumber : string
 NewExpiresAt : time
 }
 
-entity "NodeSelector" as nodeselector {
---
+object "NodeSelector" as nodeselector {
 SpiffeID : string
+--
 Type : string
 Value : string
 }
 
-bundle ...|{ fre
-re ...|{ fre
-re ...|{ selector
-re ...|{ dnsname
-attestednode...|{ nodeselector
+bundle --|{ fre
+re --|{ fre
+re --|{ selector
+re --|{ dnsname
+attestednode --|{ nodeselector
 @enduml
